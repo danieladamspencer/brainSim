@@ -1,0 +1,22 @@
+Package: simulateCifti
+Title: Simulate cifti objects
+Version: 0.1.0
+Authors@R: c(
+  person(given = "Daniel",
+           family = "Spencer",
+           email = "danieladamspencer@gmail.com",
+           role = c("aut","cre"),
+           comment = c(ORCID = "0000-0002-9705-3605")))
+Description: The only exported function so far is the simulateCifti function, 
+    which can be used to simulate cifti objects with spatially-defined areas
+    of activation and autocorrelated errors.
+License: GPL (>= 3)
+Encoding: UTF-8
+Imports: 
+    ciftiTools,
+    neuRosim,
+    stats
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+URL: https://github.com/danieladamspencer/simulateCifti
