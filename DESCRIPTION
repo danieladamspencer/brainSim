@@ -1,5 +1,5 @@
-Package: simulateCifti
-Title: Simulate cifti objects
+Package: brainSim
+Title: Simulate brain images as cifti objects
 Version: 0.1.0
 Authors@R: c(
   person(given = "Daniel",
@@ -7,9 +7,12 @@ Authors@R: c(
            email = "danieladamspencer@gmail.com",
            role = c("aut","cre"),
            comment = c(ORCID = "0000-0002-9705-3605")))
-Description: The only exported function so far is the simulateCifti function, 
-    which can be used to simulate cifti objects with spatially-defined areas
-    of activation and autocorrelated errors.
+Description: The only exported functions so far are the simulate_cifti and 
+    simulate_cifti_multiple functions, which can be used to simulate cifti 
+    objects with spatially-defined areas of activation and autocorrelated 
+    errors for single subject, single session datasets (simulate_cifti) or
+    a user-specified number of subjects, sessions, and runs 
+    (simulate_cifti_multiple).
 License: GPL (>= 3)
 Encoding: UTF-8
 Imports: 
@@ -19,4 +22,4 @@ Imports:
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
-URL: https://github.com/danieladamspencer/simulateCifti
+URL: https://github.com/danieladamspencer/brainSim

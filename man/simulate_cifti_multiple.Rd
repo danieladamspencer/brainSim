@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulate_cifti.R
 \name{simulate_cifti_multiple}
 \alias{simulate_cifti_multiple}
-\title{Simulate cifti data for task fMRI for multiple subjects and sessions}
+\title{Simulate cifti data for task fMRI for multiple subjects, sessions, and runs}
 \usage{
 simulate_cifti_multiple(
   wb_path,
@@ -82,7 +82,7 @@ as cifti objects within the \code{coefficients} object. The simulated
 design matrix is found in the \code{design} object.
 }
 \description{
-Simulate cifti data for task fMRI for multiple subjects and sessions
+Simulate cifti data for task fMRI for multiple subjects, sessions, and runs
 }
 \examples{
 \dontrun{
