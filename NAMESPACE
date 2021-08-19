@@ -2,9 +2,9 @@
 
 export(simulate_cifti)
 export(simulate_cifti_multiple)
+importFrom(ciftiTools,ciftiTools.files)
 importFrom(ciftiTools,ciftiTools.setOption)
-importFrom(ciftiTools,concat_xifti)
-importFrom(ciftiTools,demo_files)
+importFrom(ciftiTools,merge_xifti)
 importFrom(ciftiTools,read_cifti)
 importFrom(ciftiTools,resample_cifti)
 importFrom(ciftiTools,smooth_cifti)

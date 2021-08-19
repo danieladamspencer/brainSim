@@ -32,7 +32,7 @@
 #' @export
 #'
 #' @importFrom neuRosim specifydesign
-#' @importFrom ciftiTools ciftiTools.setOption demo_files read_cifti concat_xifti resample_cifti
+#' @importFrom ciftiTools ciftiTools.setOption ciftiTools.files read_cifti merge_xifti resample_cifti
 #' @importFrom stats arima.sim
 #'
 #' @examples
@@ -85,7 +85,7 @@ simulate_cifti <-
         param = NULL
       )
     # Make a cifti for the coefficients
-    cifti_files <- ciftiTools::demo_files()
+    cifti_files <- ciftiTools::ciftiTools.files()
     coef_cifti <-
       ciftiTools::read_cifti(
         cifti_fname = cifti_files$cifti[[1]],
@@ -100,7 +100,7 @@ simulate_cifti <-
         max_amplitude = max_amplitude
       )
     }, simplify = FALSE)
-    smooth_coef_cifti <- ciftiTools::concat_xifti(xifti_list = smooth_coef_cifti)
+    smooth_coef_cifti <- ciftiTools::merge_xifti(xifti_list = smooth_coef_cifti)
     # Make ciftis for the AR coefficients
     if(is.null(ar_error)) ar_error <- 0
     ar_coefs <- sapply(ar_error, function(p) {
@@ -111,7 +111,7 @@ simulate_cifti <-
         max_amplitude = p
       )
     },simplify = F)
-    ar_coefs <- ciftiTools::concat_xifti(xifti_list = ar_coefs)
+    ar_coefs <- ciftiTools::merge_xifti(xifti_list = ar_coefs)
     # Simulate the error term
     cifti_error <- ar_coefs
     cifti_error$data$cortex_left <-
@@ -303,7 +303,7 @@ spatial_effects_cifti <- function(cifti_obj, centers_lambda, smooth_FWHM, max_am
 #' @export
 #'
 #' @importFrom neuRosim specifydesign
-#' @importFrom ciftiTools ciftiTools.setOption demo_files read_cifti concat_xifti resample_cifti
+#' @importFrom ciftiTools ciftiTools.setOption ciftiTools.files read_cifti merge_xifti resample_cifti
 #' @importFrom stats arima.sim
 #'
 #' @examples
@@ -362,7 +362,7 @@ simulate_cifti_multiple <-
         param = NULL
       )
     # Make a cifti for the coefficients
-    cifti_files <- ciftiTools::demo_files()
+    cifti_files <- ciftiTools::ciftiTools.files()
     template_cifti <-
       ciftiTools::read_cifti(
         cifti_fname = cifti_files$cifti[[1]],
