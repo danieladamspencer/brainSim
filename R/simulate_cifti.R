@@ -176,8 +176,6 @@ spatial_effects_cifti_coef <- function(cifti_obj,
   if(!"xifti" %in% class(cifti_obj)) stop("The cifti_obj must have class 'xifti'.")
   hems <- c('left','right')
   n_vox <- sapply(hems, function(hem) nrow(cifti_obj$data[[paste0("cortex_",hem)]]), simplify = F)
-  # voxL <- nrow(cifti_obj$data$cortex_left)
-  # voxR <- nrow(cifti_obj$data$cortex_right)
 
   all_ciftis <- sapply(paste("Task",seq(n_tasks)), function(h) {
     h_num <- as.numeric(sub("Task ","",h))
@@ -190,8 +188,6 @@ spatial_effects_cifti_coef <- function(cifti_obj,
           ))
         if(is.null(hem_vox)) return(NULL)
       }, simplify = F)
-    # left_centers <- sample(x = 1:voxL,size = max(rpois(1,centers_lambda),1))
-    # right_centers <- sample(x = 1:voxR,size = max(rpois(1,centers_lambda),1))
     sapply(paste("Subject",seq(n_subjects)), function(i) {
       # Now jitter for subjects
       hem_centers_i <-
@@ -199,8 +195,6 @@ spatial_effects_cifti_coef <- function(cifti_obj,
           if(!is.null(hc)) return(hc + rpois(1, subjects_var))
           if(is.null(hc)) return(NULL)
         }, simplify = F)
-      # left_centers_i <- left_centers + rpois(1, subjects_var)
-      # right_centers_i <- right_centers + rpois(1, subjects_var)
       sapply(paste("Session",seq(n_sessions)), function(j) {
         # Jitter a little less for sessions
         hem_centers_ij <-
@@ -208,8 +202,6 @@ spatial_effects_cifti_coef <- function(cifti_obj,
             if(!is.null(hc)) return(hc + rpois(1, subjects_var))
             if(is.null(hc)) return(NULL)
           }, simplify = F)
-        # left_centers_ij <- left_centers_i + rpois(1, sessions_var)
-        # right_centers_ij <- right_centers_i + rpois(1, sessions_var)
         sapply(paste("Run", seq(n_runs)), function(k) {
           # And jitter just a little bit between runs
           binary_act_ijk <-
@@ -220,23 +212,11 @@ spatial_effects_cifti_coef <- function(cifti_obj,
               hem_binary[hem_center_ijk] <- 1
               return(as.matrix(hem_binary))
             }, hc = hem_centers_ij, nvox = n_vox, SIMPLIFY = F)
-          # left_centers_ijk <- left_centers_ij + rpois(1, sessions_var)
-          # right_centers_ijk <- right_centers_ij + rpois(1, sessions_var)
-          # left_binary <- rep(0,voxL)
-          # left_binary[left_centers_ijk] <- 1
-          # right_binary <- rep(0,voxR)
-          # right_binary[right_centers_ijk] <- 1
           cifti_out <- cifti_obj
-          # cifti_out$data$cortex_left <- as.matrix(left_binary)
-          # cifti_out$data$cortex_right <- as.matrix(right_binary)
           for(hem_num in 1:2) {
             if(!is.null(n_vox[[hem_num]]))
               cifti_out$data[[hem_num]] <- binary_act_ijk[[hem_num]]
           }
-          # if(!is.null(n_vox[[1]]))
-          #   cifti_out$data$cortex_left <- binary_act_ijk[[1]]
-          # if(!is.null(n_vox[[2]]))
-          #   cifti_out$data$cortex_right <- binary_act_ijk[[2]]
           # Smooth out the signal
           smooth_cifti <- ciftiTools::smooth_cifti(cifti_out, surf_FWHM = smooth_FWHM)
           # Make sure the amplitude matches the maximum amplitude as input
@@ -247,8 +227,6 @@ spatial_effects_cifti_coef <- function(cifti_obj,
                   max_amplitude[hem_num] * x / max(x))
             }
           }
-          # smooth_cifti$data$cortex_left <- apply(smooth_cifti$data$cortex_left, 2, function(x) max_amplitude[h_num] * x / max(x))
-          # smooth_cifti$data$cortex_right <- apply(smooth_cifti$data$cortex_right, 2, function(x) max_amplitude[h_num] * x / max(x))
           return(smooth_cifti)
         }, simplify = FALSE)
       }, simplify = FALSE)
