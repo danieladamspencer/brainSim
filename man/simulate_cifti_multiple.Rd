@@ -6,6 +6,7 @@
 \usage{
 simulate_cifti_multiple(
   wb_path,
+  hemisphere = "both",
   n_subjects = 1,
   n_sessions = 1,
   n_runs = 1,
@@ -26,6 +27,9 @@ simulate_cifti_multiple(
 }
 \arguments{
 \item{wb_path}{Path to the connectome workbench (required)}
+
+\item{hemisphere}{Which hemisphere(s) should be generated? One of "left",
+"right", or "both". Default is "both".}
 
 \item{n_subjects}{The number of subjects for which data should be generated}
 

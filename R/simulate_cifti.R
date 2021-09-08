@@ -174,38 +174,81 @@ spatial_effects_cifti_coef <- function(cifti_obj,
                                        sessions_var = 2,
                                        runs_var = 1) {
   if(!"xifti" %in% class(cifti_obj)) stop("The cifti_obj must have class 'xifti'.")
-  voxL <- nrow(cifti_obj$data$cortex_left)
-  voxR <- nrow(cifti_obj$data$cortex_right)
+  hems <- c('left','right')
+  n_vox <- sapply(hems, function(hem) nrow(cifti_obj$data[[paste0("cortex_",hem)]]), simplify = F)
+  # voxL <- nrow(cifti_obj$data$cortex_left)
+  # voxR <- nrow(cifti_obj$data$cortex_right)
+
   all_ciftis <- sapply(paste("Task",seq(n_tasks)), function(h) {
     h_num <- as.numeric(sub("Task ","",h))
     if(length(max_amplitude) == 1) h_num <- 1
     # Simulate overall centers for the tasks
-    left_centers <- sample(x = 1:voxL,size = max(rpois(1,centers_lambda),1))
-    right_centers <- sample(x = 1:voxR,size = max(rpois(1,centers_lambda),1))
+    hem_centers <-
+      sapply(n_vox, function(hem_vox) {
+        if(!is.null(hem_vox))
+          return(sample(x = 1:hem_vox, size = max(rpois(1, centers_lambda), 1)
+          ))
+        if(is.null(hem_vox)) return(NULL)
+      }, simplify = F)
+    # left_centers <- sample(x = 1:voxL,size = max(rpois(1,centers_lambda),1))
+    # right_centers <- sample(x = 1:voxR,size = max(rpois(1,centers_lambda),1))
     sapply(paste("Subject",seq(n_subjects)), function(i) {
       # Now jitter for subjects
-      left_centers_i <- left_centers + rpois(1, subjects_var)
-      right_centers_i <- right_centers + rpois(1, subjects_var)
+      hem_centers_i <-
+        sapply(hem_centers, function(hc) {
+          if(!is.null(hc)) return(hc + rpois(1, subjects_var))
+          if(is.null(hc)) return(NULL)
+        }, simplify = F)
+      # left_centers_i <- left_centers + rpois(1, subjects_var)
+      # right_centers_i <- right_centers + rpois(1, subjects_var)
       sapply(paste("Session",seq(n_sessions)), function(j) {
         # Jitter a little less for sessions
-        left_centers_ij <- left_centers_i + rpois(1, sessions_var)
-        right_centers_ij <- right_centers_i + rpois(1, sessions_var)
+        hem_centers_ij <-
+          sapply(hem_centers_i, function(hc) {
+            if(!is.null(hc)) return(hc + rpois(1, subjects_var))
+            if(is.null(hc)) return(NULL)
+          }, simplify = F)
+        # left_centers_ij <- left_centers_i + rpois(1, sessions_var)
+        # right_centers_ij <- right_centers_i + rpois(1, sessions_var)
         sapply(paste("Run", seq(n_runs)), function(k) {
           # And jitter just a little bit between runs
-          left_centers_ijk <- left_centers_ij + rpois(1, sessions_var)
-          right_centers_ijk <- right_centers_ij + rpois(1, sessions_var)
-          left_binary <- rep(0,voxL)
-          left_binary[left_centers_ijk] <- 1
-          right_binary <- rep(0,voxR)
-          right_binary[right_centers_ijk] <- 1
+          binary_act_ijk <-
+            mapply(function(hc,nvox) {
+              if(is.null(hc)) return(NULL)
+              hem_center_ijk <- hc + rpois(1, subjects_var)
+              hem_binary <- rep(0,nvox)
+              hem_binary[hem_center_ijk] <- 1
+              return(as.matrix(hem_binary))
+            }, hc = hem_centers_ij, nvox = n_vox, SIMPLIFY = F)
+          # left_centers_ijk <- left_centers_ij + rpois(1, sessions_var)
+          # right_centers_ijk <- right_centers_ij + rpois(1, sessions_var)
+          # left_binary <- rep(0,voxL)
+          # left_binary[left_centers_ijk] <- 1
+          # right_binary <- rep(0,voxR)
+          # right_binary[right_centers_ijk] <- 1
           cifti_out <- cifti_obj
-          cifti_out$data$cortex_left <- as.matrix(left_binary)
-          cifti_out$data$cortex_right <- as.matrix(right_binary)
+          # cifti_out$data$cortex_left <- as.matrix(left_binary)
+          # cifti_out$data$cortex_right <- as.matrix(right_binary)
+          for(hem_num in 1:2) {
+            if(!is.null(n_vox[[hem_num]]))
+              cifti_out$data[[hem_num]] <- binary_act_ijk[[hem_num]]
+          }
+          # if(!is.null(n_vox[[1]]))
+          #   cifti_out$data$cortex_left <- binary_act_ijk[[1]]
+          # if(!is.null(n_vox[[2]]))
+          #   cifti_out$data$cortex_right <- binary_act_ijk[[2]]
           # Smooth out the signal
           smooth_cifti <- ciftiTools::smooth_cifti(cifti_out, surf_FWHM = smooth_FWHM)
           # Make sure the amplitude matches the maximum amplitude as input
-          smooth_cifti$data$cortex_left <- apply(smooth_cifti$data$cortex_left, 2, function(x) max_amplitude[h_num] * x / max(x))
-          smooth_cifti$data$cortex_right <- apply(smooth_cifti$data$cortex_right, 2, function(x) max_amplitude[h_num] * x / max(x))
+          for(hem_num in 1:2) {
+            if(!is.null(n_vox[[hem_num]])){
+              smooth_cifti$data[[hem_num]] <-
+                apply(smooth_cifti$data[[hem_num]], 2, function(x)
+                  max_amplitude[hem_num] * x / max(x))
+            }
+          }
+          # smooth_cifti$data$cortex_left <- apply(smooth_cifti$data$cortex_left, 2, function(x) max_amplitude[h_num] * x / max(x))
+          # smooth_cifti$data$cortex_right <- apply(smooth_cifti$data$cortex_right, 2, function(x) max_amplitude[h_num] * x / max(x))
           return(smooth_cifti)
         }, simplify = FALSE)
       }, simplify = FALSE)
@@ -217,8 +260,12 @@ spatial_effects_cifti_coef <- function(cifti_obj,
       mapply(function(xxx,yyy) {
         mapply(function(xxxx,yyyy) {
           out <- xxxx
-          out$data$cortex_left <- cbind(xxxx$data$cortex_left, yyyy$data$cortex_left)
-          out$data$cortex_right <- cbind(xxxx$data$cortex_right, yyyy$data$cortex_right)
+          if(!is.null(n_vox[[1]])) {
+            out$data$cortex_left <- cbind(xxxx$data$cortex_left, yyyy$data$cortex_left)
+          }
+          if(!is.null(n_vox[[2]])) {
+            out$data$cortex_right <- cbind(xxxx$data$cortex_right, yyyy$data$cortex_right)
+          }
           return(out)
         }, xxxx = xxx, yyyy = yyy, SIMPLIFY = FALSE)
       }, xxx = xx, yyy = yy, SIMPLIFY = FALSE)
@@ -263,6 +310,8 @@ spatial_effects_cifti <- function(cifti_obj, centers_lambda, smooth_FWHM, max_am
 #' Simulate cifti data for task fMRI for multiple subjects, sessions, and runs
 #'
 #' @param wb_path Path to the connectome workbench (required)
+#' @param hemisphere Which hemisphere(s) should be generated? One of "left",
+#'   "right", or "both". Default is "both".
 #' @param n_subjects The number of subjects for which data should be generated
 #' @param n_sessions The number of sessions of data per subject to be generated
 #' @param n_runs The number of runs per session to be generated
@@ -303,7 +352,7 @@ spatial_effects_cifti <- function(cifti_obj, centers_lambda, smooth_FWHM, max_am
 #' @export
 #'
 #' @importFrom neuRosim specifydesign
-#' @importFrom ciftiTools ciftiTools.setOption ciftiTools.files read_cifti merge_xifti resample_cifti
+#' @importFrom ciftiTools ciftiTools.setOption ciftiTools.files read_cifti merge_xifti resample_cifti remove_xifti
 #' @importFrom stats arima.sim
 #'
 #' @examples
@@ -312,6 +361,7 @@ spatial_effects_cifti <- function(cifti_obj, centers_lambda, smooth_FWHM, max_am
 #' }
 simulate_cifti_multiple <-
   function(wb_path,
+           hemisphere = "both",
            n_subjects = 1,
            n_sessions = 1,
            n_runs = 1,
@@ -330,6 +380,10 @@ simulate_cifti_multiple <-
            surfR = NULL) {
     # This is necessary for the cifti functions
     ciftiTools::ciftiTools.setOption('wb_path',wb_path)
+    # Check hemisphere entry
+    hemisphere <- match.arg(hemisphere,c("left","right","both"))
+    do_left <- hemisphere %in% c('left','both')
+    do_right <- hemisphere %in% c('right','both')
     # Checks on the inputs
     if(!is.null(onsets)) {
       ntasks = length(onsets)
@@ -369,6 +423,11 @@ simulate_cifti_multiple <-
         surfL_fname = cifti_files$surf[[1]],
         surfR_fname = cifti_files$surf[[2]]
       )
+    if(hemisphere != "both") {
+      other_hem <- c("left","right")[hemisphere != c("left","right")]
+      template_cifti <-
+        ciftiTools::remove_xifti(template_cifti, paste0(c("cortex_", "surf_"), other_hem))
+    }
     if(!is.null(resamp_res)) {
       if(resamp_res < 32000) {
         if(resamp_res < 1000) message("Resampling to a resolution below 1000 may oversmooth and deliver undesirable results.")
@@ -412,17 +471,25 @@ simulate_cifti_multiple <-
       mapply(function(coef_ij,ar_ij) {
         mapply(function(coef_ijk, ar_ijk) {
           cifti_error <- ar_ijk
-          cifti_error$data$cortex_left <-
-            t(apply(ar_ijk$data$cortex_left, 1, function(cl_v)
-              arima.sim(model = list(ar = cl_v), n = ntime)))
-          cifti_error$data$cortex_right <-
-            t(apply(ar_ijk$data$cortex_right, 1, function(cl_v)
-              arima.sim(model = list(ar = cl_v), n = ntime)))
+          if(do_left) {
+            cifti_error$data$cortex_left <-
+              t(apply(ar_ijk$data$cortex_left, 1, function(cl_v)
+                arima.sim(model = list(ar = cl_v), n = ntime)))
+          }
+          if(do_right) {
+            cifti_error$data$cortex_right <-
+              t(apply(ar_ijk$data$cortex_right, 1, function(cl_v)
+                arima.sim(model = list(ar = cl_v), n = ntime)))
+          }
           final_cifti <- cifti_error
-          final_cifti$data$cortex_left <- final_cifti$data$cortex_left +
-            tcrossprod(coef_ijk$data$cortex_left,design)
-          final_cifti$data$cortex_right <- final_cifti$data$cortex_right +
-            tcrossprod(coef_ijk$data$cortex_right,design)
+          if(do_left) {
+            final_cifti$data$cortex_left <- final_cifti$data$cortex_left +
+              tcrossprod(coef_ijk$data$cortex_left,design)
+          }
+          if(do_right) {
+            final_cifti$data$cortex_right <- final_cifti$data$cortex_right +
+              tcrossprod(coef_ijk$data$cortex_right,design)
+          }
           final_cifti <- final_cifti + 250 # This is done so that preprocessing does
                                             # not artifically inflate values in locations
                                             # with means close to zero.
