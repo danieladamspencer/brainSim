@@ -485,7 +485,7 @@ simulate_cifti_multiple <-
     ar_return <- apply(all_data_combos,1,function(x) {
       ar_coefs[[x[1]]][[x[2]]][[x[3]]]
     })
-    cifti_names <- apply(all_data_combos,1,function(x) paste("Subject",x[1],"Session",x[2],"Run",x[3]))
+    cifti_names <- apply(all_data_combos,1,function(x) paste0("subj",x[1],"_sess",x[2],"_run",x[3]))
     names(final_return) <- names(coef_return) <- names(ar_return) <-  cifti_names
     return(
       list(
