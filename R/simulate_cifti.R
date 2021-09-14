@@ -176,6 +176,7 @@ spatial_effects_cifti_coef <- function(cifti_obj,
   if(!"xifti" %in% class(cifti_obj)) stop("The cifti_obj must have class 'xifti'.")
   hems <- c('left','right')
   n_vox <- sapply(hems, function(hem) nrow(cifti_obj$data[[paste0("cortex_",hem)]]), simplify = F)
+  if(length(max_amplitude) == 1) max_amplitude <- rep(max_amplitude,2)
 
   all_ciftis <- sapply(paste("Task",seq(n_tasks)), function(h) {
     h_num <- as.numeric(sub("Task ","",h))
@@ -331,7 +332,7 @@ spatial_effects_cifti <- function(cifti_obj, centers_lambda, smooth_FWHM, max_am
 #'
 #' @importFrom neuRosim specifydesign
 #' @importFrom ciftiTools ciftiTools.setOption ciftiTools.files read_cifti merge_xifti resample_cifti remove_xifti
-#' @importFrom stats arima.sim
+#' @importFrom stats arima.sim rnorm
 #'
 #' @examples
 #' \dontrun{
@@ -399,25 +400,26 @@ simulate_cifti_multiple <-
       ciftiTools::read_cifti(
         cifti_fname = cifti_files$cifti[[1]],
         surfL_fname = cifti_files$surf[[1]],
-        surfR_fname = cifti_files$surf[[2]]
+        surfR_fname = cifti_files$surf[[2]],
+        resamp_res = resamp_res
       )
     if(hemisphere != "both") {
       other_hem <- c("left","right")[hemisphere != c("left","right")]
       template_cifti <-
         ciftiTools::remove_xifti(template_cifti, paste0(c("cortex_", "surf_"), other_hem))
     }
-    if(!is.null(resamp_res)) {
-      if(resamp_res < 32000) {
-        if(resamp_res < 1000) message("Resampling to a resolution below 1000 may oversmooth and deliver undesirable results.")
-        template_cifti <-
-          ciftiTools::resample_cifti(
-            x = template_cifti,
-            surfL_original_fname = surfL,
-            surfR_original_fname = surfR,
-            resamp_res = resamp_res
-          )
-      }
-    }
+    # if(!is.null(resamp_res)) {
+    #   if(resamp_res < 32000) {
+    #     if(resamp_res < 1000) message("Resampling to a resolution below 1000 may oversmooth and deliver undesirable results.")
+    #     template_cifti <-
+    #       ciftiTools::resample_cifti(
+    #         x = template_cifti,
+    #         surfL_original_fname = surfL,
+    #         surfR_original_fname = surfR,
+    #         resamp_res = resamp_res
+    #       )
+    #   }
+    # }
     true_coef_cifti <-
       spatial_effects_cifti_coef(
         cifti_obj = template_cifti,
@@ -452,12 +454,20 @@ simulate_cifti_multiple <-
           if(do_left) {
             cifti_error$data$cortex_left <-
               t(apply(ar_ijk$data$cortex_left, 1, function(cl_v)
-                arima.sim(model = list(ar = cl_v), n = ntime)))
+                if(cl_v == 0) {
+                  return(rnorm(ntime))
+                } else {
+                  return(arima.sim(model = list(ar = cl_v), n = ntime))
+                }))
           }
           if(do_right) {
             cifti_error$data$cortex_right <-
               t(apply(ar_ijk$data$cortex_right, 1, function(cl_v)
-                arima.sim(model = list(ar = cl_v), n = ntime)))
+                if(cl_v == 0) {
+                  return(rnorm(ntime))
+                } else {
+                  return(arima.sim(model = list(ar = cl_v), n = ntime))
+                }))
           }
           final_cifti <- cifti_error
           if(do_left) {
@@ -487,12 +497,12 @@ simulate_cifti_multiple <-
     })
     cifti_names <- apply(all_data_combos,1,function(x) paste0("subj",x[1],"_sess",x[2],"_run",x[3]))
     names(final_return) <- names(coef_return) <- names(ar_return) <-  cifti_names
-    return(
-      list(
-        simulated_cifti = final_return,
-        coef_cifti = coef_return,
-        ar_cifti = ar_return,
-        design = design
-      )
+    output <- list(
+      simulated_cifti = final_return,
+      coef_cifti = coef_return,
+      ar_cifti = ar_return,
+      design = design
     )
+    class(output) <- "simCifti"
+    return(output)
   }

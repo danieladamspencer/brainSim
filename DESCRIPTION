@@ -16,7 +16,7 @@ Description: The only exported functions so far are the simulate_cifti and
 License: GPL (>= 3)
 Encoding: UTF-8
 Imports: 
-    ciftiTools,
+    ciftiTools (>= 0.5.1),
     neuRosim,
     stats
 LazyData: true
