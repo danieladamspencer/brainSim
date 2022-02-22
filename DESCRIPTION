@@ -6,7 +6,11 @@ Authors@R: c(
            family = "Spencer",
            email = "danieladamspencer@gmail.com",
            role = c("aut","cre"),
-           comment = c(ORCID = "0000-0002-9705-3605")))
+           comment = c(ORCID = "0000-0002-9705-3605")),
+  person(given = "Amanda",
+           family = "Mejia",
+           email = "mandy.mejia@gmail.com",
+           role = c("aut")))
 Description: The only exported functions so far are the simulate_cifti and 
     simulate_cifti_multiple functions, which can be used to simulate cifti 
     objects with spatially-defined areas of activation and autocorrelated 
